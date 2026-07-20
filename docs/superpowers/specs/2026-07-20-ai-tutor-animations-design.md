@@ -36,7 +36,7 @@ Browser (React + Vite)                    Node backend
 ```
 
 - **Frontend:** React + Vite SPA. Conversation column styled like ChatGPT; each assistant
-  message may carry an animation rendered beneath/beside it.
+  message may carry an animation rendered inline directly beneath its text.
 - **Backend:** Small Node (Express) server. Uses `@anthropic-ai/claude-agent-sdk`, which
   authenticates through the local Claude Code installation. Streams responses to the
   frontend via SSE.
