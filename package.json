@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n server,web \"npm run dev:server\" \"npm run dev:web\"",
-    "dev:server": "node server/index.js",
+    "dev:server": "node --watch server/index.js",
     "dev:web": "vite",
     "test": "vitest run"
   },
