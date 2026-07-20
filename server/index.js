@@ -1,6 +1,6 @@
 import express from "express";
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { TUTOR_SYSTEM_PROMPT } from "./prompts.js";
+import { TUTOR_SYSTEM_PROMPT, FIX_SYSTEM_PROMPT } from "./prompts.js";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -49,6 +49,40 @@ app.post("/api/chat", async (req, res) => {
     send({ type: "error", message: String(err?.message ?? err) });
   } finally {
     res.end();
+  }
+});
+
+function extractCodeBlock(text) {
+  const m = text.match(/```(?:animation|javascript|js)?\s*\n([\s\S]*?)```/);
+  return m ? m[1].trim() : null;
+}
+
+app.post("/api/fix", async (req, res) => {
+  const { code, error } = req.body ?? {};
+  if (!code || !error) {
+    return res.status(400).json({ error: "code and error required" });
+  }
+  try {
+    const q = query({
+      prompt: `This animation script failed.\n\nScript:\n\`\`\`\n${code}\n\`\`\`\n\nRuntime error:\n${error}\n\nReturn the corrected script.`,
+      options: {
+        systemPrompt: FIX_SYSTEM_PROMPT,
+        tools: [],
+        maxTurns: 1,
+      },
+    });
+    let text = "";
+    for await (const message of q) {
+      if (message.type === "assistant") {
+        for (const block of message.message.content) {
+          if (block.type === "text") text += block.text;
+        }
+      }
+    }
+    res.json({ code: extractCodeBlock(text) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ code: null, error: String(err?.message ?? err) });
   }
 });
 
