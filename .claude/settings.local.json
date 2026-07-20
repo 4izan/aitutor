@@ -5,7 +5,17 @@
       "PowerShell(git add docs)",
       "PowerShell(git config user.email \"fa050760089@gmail.com\")",
       "PowerShell(git config user.name \"Faizan\")",
-      "PowerShell(git add -A)"
+      "PowerShell(git add -A)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "PowerShell(git checkout -b feature/ai-tutor-mvp)",
+      "PowerShell(npm install express @anthropic-ai/claude-agent-sdk react react-dom marked)",
+      "PowerShell(winget install OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements --silent)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\('Path','Machine'\\) + ';' + [System.Environment]::GetEnvironmentVariable\\('Path','User'\\); node --version; npm --version)",
+      "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npm install express @anthropic-ai/claude-agent-sdk react react-dom marked)",
+      "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npm install -D vite @vitejs/plugin-react vitest concurrently)",
+      "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npm run dev)",
+      "PowerShell(Invoke-RestMethod http://localhost:5173/api/health)"
     ]
   }
 }
