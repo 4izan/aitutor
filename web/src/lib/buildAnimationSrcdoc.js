@@ -2,7 +2,7 @@ function neutralize(code) {
   return code.replaceAll("</script", "<\\/script");
 }
 
-export function buildAnimationSrcdoc(libSource, userCode) {
+export function buildAnimationSrcdoc(threeSource, engineSource, userCode) {
   return `<!doctype html>
 <html>
 <head>
@@ -19,7 +19,10 @@ window.onerror = function (msg, src, line) {
 };
 </${"script"}>
 <script>
-${neutralize(libSource)}
+${neutralize(threeSource)}
+</${"script"}>
+<script>
+${neutralize(engineSource)}
 </${"script"}>
 <script>
 try {

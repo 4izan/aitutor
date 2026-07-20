@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import libSource from "../anim/tutorAnim.js?raw";
+import threeSource from "../vendor/three.iife.js?raw";
+import coreSource from "../anim/tutorAnim.js?raw";
+import tutor3dSource from "../anim/tutor3d.js?raw";
 import { buildAnimationSrcdoc } from "../lib/buildAnimationSrcdoc.js";
 
 export default function AnimationFrame({ code }) {
@@ -40,7 +42,7 @@ export default function AnimationFrame({ code }) {
   }, [currentCode]);
 
   const srcdoc = useMemo(
-    () => buildAnimationSrcdoc(libSource, currentCode),
+    () => buildAnimationSrcdoc(threeSource, `${coreSource}\n${tutor3dSource}`, currentCode),
     [currentCode]
   );
 
@@ -56,7 +58,7 @@ export default function AnimationFrame({ code }) {
         sandbox="allow-scripts"
         srcDoc={srcdoc}
         title="animation"
-        style={{ width: "100%", height: 420, border: "none", borderRadius: 8 }}
+        style={{ width: "100%", height: 480, border: "none", borderRadius: 8 }}
       />
     </div>
   );
