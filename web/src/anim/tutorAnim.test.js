@@ -56,6 +56,16 @@ describe("tweens", () => {
     A.applyTweens(tweens, 99);
     expect(p.v).toBe(1);
   });
+  it("supports function-valued props for non-linear motion", () => {
+    const bob = { x: 0 };
+    const tweens = [
+      { target: bob, props: { x: (t) => Math.sin(t * Math.PI) }, delay: 0, duration: 2, easing: A.easings.linear },
+    ];
+    A.applyTweens(tweens, 1); // halfway -> t = 0.5 -> sin(pi/2) = 1
+    expect(bob.x).toBeCloseTo(1);
+    A.applyTweens(tweens, 2); // end -> sin(pi) = 0
+    expect(bob.x).toBeCloseTo(0);
+  });
   it("computes timeline duration", () => {
     expect(A.timelineDuration([
       { delay: 0, duration: 2 },
