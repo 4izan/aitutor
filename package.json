@@ -7,18 +7,21 @@
     "dev": "concurrently -n server,web \"npm run dev:server\" \"npm run dev:web\"",
     "dev:server": "node --watch server/index.js",
     "dev:web": "vite",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:three": "node scripts/build-three.mjs"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.215",
     "express": "^5.2.1",
     "marked": "^18.0.6",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.3",
     "concurrently": "^10.0.3",
+    "esbuild": "^0.28.1",
     "vite": "^8.1.5",
     "vitest": "^4.1.10"
   }
