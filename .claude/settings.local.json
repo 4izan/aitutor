@@ -15,7 +15,22 @@
       "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npm install express @anthropic-ai/claude-agent-sdk react react-dom marked)",
       "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npm install -D vite @vitejs/plugin-react vitest concurrently)",
       "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npm run dev)",
-      "PowerShell(Invoke-RestMethod http://localhost:5173/api/health)"
+      "PowerShell(Invoke-RestMethod http://localhost:5173/api/health)",
+      "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npx vitest run web/src/anim)",
+      "PowerShell(git add web/src/anim)",
+      "PowerShell(git add web/src/anim demo.html)",
+      "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npx vitest run web/src/lib)",
+      "PowerShell(git add web/src/lib)",
+      "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npx vitest run web/src/lib/buildAnimationSrcdoc.test.js)",
+      "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; npm test)",
+      "PowerShell(git add web/src)",
+      "PowerShell(curl.exe -s -N -X POST http://localhost:3001/api/chat -H \"Content-Type: application/json\" -d '{\\\\\"messages\\\\\":[{\\\\\"role\\\\\":\\\\\"user\\\\\",\\\\\"content\\\\\":\\\\\"Explain what a sine wave is\\\\\"}]}')",
+      "PowerShell(curl.exe -s -N -X POST http://localhost:3001/api/chat -H \"Content-Type: application/json\" -d \"@C:\\\\Users\\\\fa050\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-fa050-ai-tutor\\\\0332b304-a974-44de-8a9c-2490db5f8228\\\\scratchpad\\\\chat-body.json\")",
+      "PowerShell(git add server package.json)",
+      "PowerShell(git add web/src index.html)",
+      "PowerShell(curl.exe -s -X POST http://localhost:3001/api/fix -H \"Content-Type: application/json\" -d \"@C:\\\\Users\\\\fa050\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-fa050-ai-tutor\\\\0332b304-a974-44de-8a9c-2490db5f8228\\\\scratchpad\\\\fix-body.json\")",
+      "PowerShell(git add server/index.js)",
+      "PowerShell($env:Path += ';C:\\\\Program Files\\\\nodejs'; node \"C:\\\\Users\\\\fa050\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-fa050-ai-tutor\\\\0332b304-a974-44de-8a9c-2490db5f8228\\\\scratchpad\\\\check-prompts.mjs\")"
     ]
   }
 }
