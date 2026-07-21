@@ -5,13 +5,17 @@ interactive 3D animation beneath each explanation.
 
 ## Requirements
 
-- Node 20+
-- A logged-in Claude Code installation (the backend authenticates through it —
-  no API key needed)
+- Node 20.6+ (for `--env-file` support used in local dev)
+- A free Groq API key (no credit card required) — see Setup below
+
+## Setup
+
+1. Get a free API key from [Groq Console](https://console.groq.com).
+2. Copy `.env.example` to `.env` and paste your key into `GROQ_API_KEY`.
+3. `npm install`
 
 ## Run
 
-    npm install
     npm run dev
 
 Open http://localhost:5173 and ask something like "Why does a pendulum swing?".
@@ -52,3 +56,16 @@ the same file path updates the same URL.
 ## Tests
 
     npm test
+
+## Deploy to Render
+
+1. Push this repo to GitHub.
+2. In the [Render dashboard](https://dashboard.render.com), choose
+   "New > Blueprint" and point it at the repo — it reads `render.yaml`
+   automatically.
+3. When prompted, paste your `GROQ_API_KEY` as the environment variable
+   value (it's marked `sync: false` in the blueprint, so Render always asks
+   rather than expecting it in git).
+4. Deploy. The free tier spins down after 15 minutes of inactivity — the
+   first request after a quiet period takes about a minute to wake the
+   server back up; after that it behaves normally.

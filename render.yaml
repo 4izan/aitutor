@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ai-tutor
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
