@@ -22,8 +22,8 @@ Open http://localhost:5173 and ask something like "Why does a pendulum swing?".
 
 ## How it works
 
-- `server/` — Express server; `/api/chat` streams tutor responses from Claude via
-  the Claude Agent SDK; `/api/fix` repairs broken animation scripts (one retry).
+- `server/` — Express server; `/api/chat` streams tutor responses via Groq
+  (`server/llm.js`); `/api/fix` repairs broken animation scripts (one retry).
 - `web/src/anim/tutorAnim.js` — tween/math core shared by the 3D runtime.
   `web/src/anim/tutor3d.js` — the Tutor3D runtime built on Three.js (shapes,
   surfaces, camera orbit, playback controls). `demo.html` shows it standalone
