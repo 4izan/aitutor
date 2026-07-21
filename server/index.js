@@ -1,4 +1,6 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import { streamCompletion } from "./llm.js";
 import { TUTOR_SYSTEM_PROMPT, FIX_SYSTEM_PROMPT } from "./prompts.js";
 
@@ -62,7 +64,15 @@ app.post("/api/fix", async (req, res) => {
   res.json({ code: extractCodeBlock(text) });
 });
 
-const PORT = 3001;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir = path.join(__dirname, "..", "dist");
+
+app.use(express.static(distDir));
+app.get(/^(?!\/api).*/, (req, res) => {
+  res.sendFile(path.join(distDir, "index.html"));
+});
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`AI Tutor server listening on http://localhost:${PORT}`);
 });
