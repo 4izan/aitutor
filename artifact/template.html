@@ -1,0 +1,184 @@
+<title>AI Tutor — 3D Lessons</title>
+<style>
+  /* Deliberate single-theme design: a "night lab" — the page shares the deep
+     slate ground of the WebGL viewports so the 3D scenes sit in the page
+     rather than in boxes. Amber accent = the animated objects in the scenes. */
+  :root {
+    --ground: #0b1120;
+    --panel: #121b2f;
+    --panel-edge: #223046;
+    --ink: #e6ebf4;
+    --muted: #8b98ad;
+    --accent: #f59e0b;
+    --accent-2: #38bdf8;
+    --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  html { background: var(--ground); }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+  }
+  .layout {
+    display: flex;
+    min-height: 100vh;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  nav {
+    width: 250px;
+    flex-shrink: 0;
+    padding: 28px 18px;
+    border-right: 1px solid var(--panel-edge);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .brand {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 0 8px 4px;
+  }
+  .brand small {
+    display: block;
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.78rem;
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  nav button {
+    text-align: left;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.92rem;
+    padding: 9px 12px;
+    cursor: pointer;
+  }
+  nav button:hover { color: var(--ink); background: var(--panel); }
+  nav button.active {
+    color: var(--ink);
+    background: var(--panel);
+    border-color: var(--panel-edge);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  nav button:focus-visible, .controls-note:focus-visible {
+    outline: 2px solid var(--accent-2);
+    outline-offset: 2px;
+  }
+  main {
+    flex: 1;
+    min-width: 0;
+    padding: 28px 36px 48px;
+  }
+  #explanation {
+    max-width: 62ch;
+  }
+  #explanation h1, #explanation h2, #explanation h3 {
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+  #explanation h1 { font-size: 1.5rem; margin: 0 0 0.6em; }
+  #explanation h2 { font-size: 1.15rem; }
+  #explanation strong { color: var(--accent); font-weight: 600; }
+  #explanation code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  #explanation li { margin: 0.25em 0; }
+  #stage { margin-top: 22px; }
+  #stage canvas { max-width: 100%; }
+  .viewport-hint {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin: 26px 0 0;
+  }
+  #fallback {
+    color: var(--muted);
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 18px;
+  }
+  @media (max-width: 720px) {
+    .layout { flex-direction: column; }
+    nav {
+      width: auto;
+      flex-direction: row;
+      overflow-x: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--panel-edge);
+      padding: 14px 16px;
+      align-items: center;
+    }
+    .brand { margin: 0 10px 0 0; white-space: nowrap; }
+    nav button { white-space: nowrap; }
+    main { padding: 22px 18px 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { scroll-behavior: auto; }
+  }
+</style>
+<div class="layout">
+  <nav id="topics" aria-label="Lessons">
+    <div class="brand">AI Tutor <small>3D lessons</small></div>
+  </nav>
+  <main>
+    <div id="explanation"></div>
+    <p class="viewport-hint">Interactive viewport — drag to rotate</p>
+    <div id="stage"></div>
+    <div id="fallback" hidden>⚠ This animation failed to render. Pick another lesson.</div>
+  </main>
+</div>
+<script><!--THREE--></script>
+<script><!--ENGINE--></script>
+<script><!--MARKED--></script>
+<script>
+  const LESSONS = /*LESSONS*/[];
+  const nav = document.getElementById("topics");
+  const explanation = document.getElementById("explanation");
+  const stage = document.getElementById("stage");
+  const fallback = document.getElementById("fallback");
+  const buttons = [];
+
+  function show(index) {
+    const lesson = LESSONS[index];
+    buttons.forEach((b, i) => b.classList.toggle("active", i === index));
+    Tutor3D.disposeAll();
+    stage.replaceChildren();
+    fallback.hidden = true;
+    explanation.innerHTML = marked.parse(lesson.explanationMd);
+    try {
+      new Function(lesson.animationCode)();
+    } catch (err) {
+      console.error(err);
+      fallback.hidden = false;
+    }
+  }
+
+  LESSONS.forEach((lesson, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = lesson.title;
+    b.onclick = () => show(i);
+    nav.appendChild(b);
+    buttons.push(b);
+  });
+
+  if (LESSONS.length) show(0);
+</script>
