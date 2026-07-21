@@ -6,6 +6,7 @@ import { TUTOR_SYSTEM_PROMPT, FIX_SYSTEM_PROMPT } from "./prompts.js";
 import { createLimiter, rateLimitMiddleware } from "./rateLimit.js";
 
 const app = express();
+app.set("trust proxy", true);
 app.use(express.json({ limit: "1mb" }));
 
 const TEN_MINUTES = 10 * 60 * 1000;
@@ -50,7 +51,10 @@ app.post(
       input: buildTranscript(messages),
     })) {
       send(event);
-      if (event.type === "error") hadError = true;
+      if (event.type === "error") {
+        hadError = true;
+        console.error(event.message);
+      }
     }
     if (!hadError) send({ type: "done" });
     res.end();
