@@ -1,18 +1,23 @@
-# Deploy AI Tutor to Public Hosting (Render + Gemini) Implementation Plan
+# Deploy AI Tutor to Public Hosting (Render + Groq) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the Claude Agent SDK (local-login-only) with Google's free-tier Gemini API so the app can run on a public host, then deploy it to Render's free tier as a single server.
+> **Note:** This plan originally targeted Gemini; the provider was switched
+> to Groq before implementation began because Gemini's free tier isn't
+> available in the user's country. See the amendment at the top of
+> `docs/superpowers/specs/2026-07-21-deploy-gemini-hosting-design.md`.
 
-**Architecture:** A new `server/llm.js` wraps `@google/genai` behind a small streaming interface so route handlers barely change. `server/index.js` switches both `/api/chat` and `/api/fix` to that wrapper, adds static-file serving of the built frontend for a single-deployment shape, and gains a per-IP rate limiter (`server/rateLimit.js`) to protect the one shared free API key. Render's free tier hosts the result.
+**Goal:** Replace the Claude Agent SDK (local-login-only) with Groq's free-tier API so the app can run on a public host, then deploy it to Render's free tier as a single server.
 
-**Tech Stack:** `@google/genai` (new), Express (existing), Vite build output, Render free tier, Vitest (existing).
+**Architecture:** A new `server/llm.js` wraps `groq-sdk` behind a small streaming interface so route handlers barely change. `server/index.js` switches both `/api/chat` and `/api/fix` to that wrapper, adds static-file serving of the built frontend for a single-deployment shape, and gains a per-IP rate limiter (`server/rateLimit.js`) to protect the one shared free API key. Render's free tier hosts the result.
+
+**Tech Stack:** `groq-sdk` (new), Express (existing), Vite build output, Render free tier, Vitest (existing).
 
 ## Global Constraints
 
-- LLM provider is Google Gemini via `@google/genai`, used identically in local dev and production — one code path, no dev/prod drift, no BYOK.
-- Model: `gemini-3.5-flash` by default, overridable via `GEMINI_MODEL` env var.
-- API key lives in `GEMINI_API_KEY`, read server-side only via `process.env`, never sent to the browser, never committed (`.env` is git-ignored).
+- LLM provider is Groq via `groq-sdk`, used identically in local dev and production — one code path, no dev/prod drift, no BYOK.
+- Model: `llama-3.3-70b-versatile` by default, overridable via `GROQ_MODEL` env var.
+- API key lives in `GROQ_API_KEY`, read server-side only via `process.env`, never sent to the browser, never committed (`.env` is git-ignored).
 - Hosting is Render's free tier: one Node process serves both the built static frontend and the `/api/*` routes; the server must bind to `process.env.PORT` (Render assigns this), falling back to `3001` for local dev.
 - Rate limiting is in-memory, per-IP, sliding window, 15 requests / 10 minutes, applied to `POST /api/chat` and `POST /api/fix`. On limit, each route reuses its own existing error response shape — the frontend requires no changes.
 - No new test-mocking infrastructure: LLM-dependent code is verified via live smoke tests and the existing `npm run check` acceptance script, matching this codebase's existing testing philosophy (Vitest covers pure, deterministic logic only).
@@ -20,39 +25,36 @@
 
 ---
 
-### Task 1: Gemini API key, env config, and the LLM wrapper
+### Task 1: Groq API key, env config, and the LLM wrapper
 
 **Files:**
 - Create: `.env.example`
 - Modify: `.gitignore`
-- Modify: `package.json` (add `@google/genai` dependency)
+- Modify: `package.json` (add `groq-sdk` dependency)
 - Create: `server/llm.js`
 
 **Interfaces:**
-- Consumes: `@google/genai` (`GoogleGenAI` client), `process.env.GEMINI_API_KEY`, `process.env.GEMINI_MODEL`.
+- Consumes: `groq-sdk` (`Groq` client), `process.env.GROQ_API_KEY`, `process.env.GROQ_MODEL`.
 - Produces: `export async function* streamCompletion({ systemPrompt, input })` — an async generator yielding `{ type: "delta", text }` for each streamed chunk and `{ type: "error", message }` on failure (never throws past this boundary; a caller that only reads `for await` sees a clean end after an error event).
 
-- [ ] **Step 1: Get a free Gemini API key**
+- [ ] **Step 1: Confirm the API key exists**
 
-Go to https://aistudio.google.com/apikey (Google AI Studio), sign in, and click "Create API key". No credit card is required for the free tier. Copy the key somewhere safe — you'll paste it into `.env` in the next step.
+The user has already created a free Groq API key at https://console.groq.com
+(no credit card required) and placed it in `C:\Users\fa050\ai-tutor\.env` as
+`GROQ_API_KEY=<their key>`. Confirm this file exists and contains a
+non-empty `GROQ_API_KEY` value before continuing — if it doesn't, stop and
+report BLOCKED rather than guessing a key.
 
-- [ ] **Step 2: Create .env.example and .env**
+- [ ] **Step 2: Create .env.example**
 
-Create `C:\Users\fa050\ai-tutor\.env.example`:
+Create `C:\Users\fa050\ai-tutor\.env.example` (a template — the user's real
+`.env` already exists from Step 1 and must not be overwritten):
 
 ```
-GEMINI_API_KEY=
+GROQ_API_KEY=
 # Optional — override the default model if it's renamed or deprecated
-# GEMINI_MODEL=gemini-3.5-flash
+# GROQ_MODEL=llama-3.3-70b-versatile
 ```
-
-Then copy it to a real `.env` and fill in the key you just created:
-
-```
-Copy-Item .env.example .env
-```
-
-Edit `.env` and set `GEMINI_API_KEY=<your key>`.
 
 - [ ] **Step 3: Git-ignore .env**
 
@@ -62,63 +64,71 @@ Add a line to `C:\Users\fa050\ai-tutor\.gitignore`:
 .env
 ```
 
-- [ ] **Step 4: Install @google/genai**
+- [ ] **Step 4: Install groq-sdk**
 
-Run: `npm install @google/genai`
+Run: `npm install groq-sdk`
 Expected: exit 0, `package.json` gains it under `dependencies`.
 
-- [ ] **Step 5: Smoke-test the raw Gemini streaming shape**
+- [ ] **Step 5: Smoke-test the raw Groq streaming shape**
 
-Before wiring anything into the app, confirm the exact event shape the SDK sends. Create a temporary file `scripts/.smoke-gemini.mjs`:
+Before wiring anything into the app, confirm the exact event shape the SDK
+sends. Create a temporary file `scripts/.smoke-groq.mjs`:
 
 ```js
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const stream = await ai.interactions.create({
-  model: process.env.GEMINI_MODEL || "gemini-3.5-flash",
-  input: "Say hello in exactly five words.",
-  system_instruction: "You are terse.",
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const stream = await client.chat.completions.create({
+  model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+  messages: [
+    { role: "system", content: "You are terse." },
+    { role: "user", content: "Say hello in exactly five words." },
+  ],
   stream: true,
 });
 
-for await (const event of stream) {
-  console.log(JSON.stringify(event));
+for await (const chunk of stream) {
+  console.log(JSON.stringify(chunk));
 }
 ```
 
-Run: `node --env-file=.env scripts/.smoke-gemini.mjs`
-Expected: several JSON lines print, at least one of them shaped like
-`{"event_type":"step.delta","delta":{"type":"text","text":"..."}}` (the exact
-surrounding fields may vary — what matters is that `event_type` is
-`"step.delta"` and `delta.type` is `"text"` with a `delta.text` string).
+Run: `node --env-file=.env scripts/.smoke-groq.mjs`
+Expected: several JSON lines print, each shaped roughly like
+`{"choices":[{"delta":{"content":"..."},...}],...}` — a five-word greeting
+should be reconstructable by concatenating each chunk's
+`choices[0].delta.content` (some chunks, especially the last, may have an
+empty or missing `content` — that's normal for OpenAI-compatible streaming
+APIs).
 
-If the real shape differs from this, note exactly what you see — the
-`streamCompletion` implementation in Step 6 must match the real shape, not
-the assumed one. Adjust the `event.event_type` / `event.delta.type` checks in
-Step 6 accordingly before moving on.
+If the real shape differs meaningfully from this, note exactly what you
+see — the `streamCompletion` implementation in Step 6 must match the real
+shape, not the assumed one. Adjust the `chunk.choices[0]?.delta?.content`
+access in Step 6 accordingly before moving on.
 
-Delete the temporary file when done: `Remove-Item scripts/.smoke-gemini.mjs`
+Delete the temporary file when done: `Remove-Item scripts/.smoke-groq.mjs`
 
 - [ ] **Step 6: Create server/llm.js**
 
 ```js
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 export async function* streamCompletion({ systemPrompt, input }) {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const stream = await ai.interactions.create({
+    const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const stream = await client.chat.completions.create({
       model: MODEL,
-      input,
-      system_instruction: systemPrompt,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: input },
+      ],
       stream: true,
     });
-    for await (const event of stream) {
-      if (event.event_type === "step.delta" && event.delta?.type === "text") {
-        yield { type: "delta", text: event.delta.text };
+    for await (const chunk of stream) {
+      const text = chunk.choices[0]?.delta?.content;
+      if (text) {
+        yield { type: "delta", text };
       }
     }
   } catch (err) {
@@ -127,9 +137,9 @@ export async function* streamCompletion({ systemPrompt, input }) {
 }
 ```
 
-(If Step 5's smoke test showed a different shape, edit the `if` condition and
-`event.delta.text` access to match what you actually observed before
-continuing.)
+(If Step 5's smoke test showed a different shape, edit the
+`chunk.choices[0]?.delta?.content` access to match what you actually
+observed before continuing.)
 
 - [ ] **Step 7: Verify streamCompletion end-to-end**
 
@@ -156,19 +166,19 @@ Delete the temporary file: `Remove-Item scripts/.smoke-llm.mjs`
 
 ```
 git add .env.example .gitignore package.json package-lock.json server/llm.js
-git commit -m "feat: Gemini streaming wrapper (server/llm.js) with verified event shape"
+git commit -m "feat: Groq streaming wrapper (server/llm.js) with verified event shape"
 ```
 
 ---
 
-### Task 2: Wire /api/chat and /api/fix to the Gemini wrapper
+### Task 2: Wire /api/chat and /api/fix to the Groq wrapper
 
 **Files:**
 - Modify: `server/index.js`
 
 **Interfaces:**
 - Consumes: `streamCompletion({ systemPrompt, input })` (Task 1), `buildTranscript(messages)` (existing, unchanged), `TUTOR_SYSTEM_PROMPT` / `FIX_SYSTEM_PROMPT` (existing, unchanged), `extractCodeBlock(text)` (existing, unchanged).
-- Produces: `/api/chat` and `/api/fix` behave identically from the frontend's point of view — same SSE event shapes, same JSON response shape — just backed by Gemini instead of the Agent SDK.
+- Produces: `/api/chat` and `/api/fix` behave identically from the frontend's point of view — same SSE event shapes, same JSON response shape — just backed by Groq instead of the Agent SDK.
 
 - [ ] **Step 1: Replace the import**
 
@@ -252,7 +262,7 @@ curl.exe -s -N -X POST http://localhost:3001/api/chat -H "Content-Type: applicat
 
 Expected: a stream of `data: {"type":"delta",...}` lines forming an
 explanation and a ```` ```animation ```` block, ending with
-`data: {"type":"done"}` — same shape as before, now via Gemini.
+`data: {"type":"done"}` — same shape as before, now via Groq.
 
 - [ ] **Step 5: Manual verification — /api/fix**
 
@@ -262,7 +272,7 @@ curl.exe -s -X POST http://localhost:3001/api/fix -H "Content-Type: application/
 
 Expected: JSON `{"code": "..."}` where the corrected code calls `s.sphere(...)`.
 
-- [ ] **Step 6: Run the acceptance script against Gemini**
+- [ ] **Step 6: Run the acceptance script against Groq**
 
 Stop the manual server from Step 4 (or leave it running — `npm run dev`
 starts its own instance on the same port and will conflict; use one or the
@@ -279,7 +289,7 @@ the Claude-backed version.
 
 ```
 git add server/index.js
-git commit -m "feat: switch /api/chat and /api/fix to the Gemini wrapper"
+git commit -m "feat: switch /api/chat and /api/fix to the Groq wrapper"
 ```
 
 ---
@@ -536,8 +546,8 @@ requests:
 }
 ```
 
-Expected: the first 15 responses are normal `/api/fix` results (real Gemini
-calls — `{"code": ...}` or a Gemini-side error), and the 16th is
+Expected: the first 15 responses are normal `/api/fix` results (real Groq
+calls — `{"code": ...}` or a Groq-side error), and the 16th is
 `{"code":null}` with HTTP status 429.
 
 - [ ] **Step 7: Run the full test suite**
@@ -575,7 +585,7 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
-      - key: GEMINI_API_KEY
+      - key: GROQ_API_KEY
         sync: false
 ```
 
@@ -592,7 +602,7 @@ Replace the `## Requirements` section:
 ## Requirements
 
 - Node 20.6+ (for `--env-file` support used in local dev)
-- A free Google Gemini API key (no credit card required) — see Setup below
+- A free Groq API key (no credit card required) — see Setup below
 ```
 
 Replace the `## Run` section with a `## Setup` + `## Run` pair:
@@ -600,8 +610,8 @@ Replace the `## Run` section with a `## Setup` + `## Run` pair:
 ```markdown
 ## Setup
 
-1. Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey).
-2. Copy `.env.example` to `.env` and paste your key into `GEMINI_API_KEY`.
+1. Get a free API key from [Groq Console](https://console.groq.com).
+2. Copy `.env.example` to `.env` and paste your key into `GROQ_API_KEY`.
 3. `npm install`
 
 ## Run
@@ -620,7 +630,7 @@ Add a new section after `## Tests`:
 2. In the [Render dashboard](https://dashboard.render.com), choose
    "New > Blueprint" and point it at the repo — it reads `render.yaml`
    automatically.
-3. When prompted, paste your `GEMINI_API_KEY` as the environment variable
+3. When prompted, paste your `GROQ_API_KEY` as the environment variable
    value (it's marked `sync: false` in the blueprint, so Render always asks
    rather than expecting it in git).
 4. Deploy. The free tier spins down after 15 minutes of inactivity — the
