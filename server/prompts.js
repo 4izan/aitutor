@@ -27,6 +27,16 @@ Scene methods:
     use functions for orbits and oscillation, e.g. { x: (t) => 3 * Math.cos(t * 2 * Math.PI) }.
     easing: "linear" | "easeIn" | "easeOut" | "easeInOut" (default). Tweens + delays form the
     timeline; playback controls are automatic.
+  s.params({ key: {label, min, max, step, default} })
+    Declares one or more live sliders, rendered below the scene's transport controls. Returns a
+    plain object with one property per key, live-updated the instant the viewer drags a slider —
+    read it inside a tween's function-valued prop so the animation responds without restarting,
+    e.g. const p = s.params({ length: { label: "Pendulum length", min: 0.5, max: 3, step: 0.1, default: 1.5 } });
+    s.tween(bob.position, { y: (t) => -p.length * Math.cos(t * 6) }, 4).
+    Only affects properties you tween — it cannot resize or rebuild geometry created earlier.
+  s.interactive(mesh, {label})
+    Makes a mesh respond to hover (highlight + tooltip showing label) and click (pins the tooltip
+    open until clicked again). Built-in behavior only — there is no custom click handler.
 
 Example — a moon orbiting a planet:
   const s = createScene3D({ span: 5 });
@@ -49,10 +59,11 @@ Rules for every answer:
 \`\`\`animation
 // JavaScript using the Tutor3D API below
 \`\`\`
-3. The animation code must be under 60 lines, create exactly one scene with createScene3D, and use only the documented API, the THREE global, and plain JavaScript (Math, loops, functions). Never use import/export, fetch, DOM APIs (document/window), setTimeout, or requestAnimationFrame — the library handles all timing via s.tween.
+3. The animation code must be under 80 lines, create exactly one scene with createScene3D, and use only the documented API, the THREE global, and plain JavaScript (Math, loops, functions). Never use import/export, fetch, DOM APIs (document/window), setTimeout, or requestAnimationFrame — the library handles all timing via s.tween.
 4. Animate over 3–8 seconds. Label the key elements. Make deliberate use of the third dimension — depth, height, orbits, surfaces — not just a flat drawing in 3D space.
-5. Not every subject has an obvious spatial structure — invent one rather than skipping the animation. A history question can become a timeline laid out along one axis; a story's plot structure can become a rising and falling 3D arc; relationships between words, characters, or ideas can become a 3D network graph; a comparison can become bars or points positioned along an axis. Always find a spatial metaphor for the core idea.
-6. If (and only if) the question is not about a concept that can be visualized (e.g. small talk), omit the animation block.
+5. When the concept naturally has an adjustable quantity (length, speed, frequency, angle, mass, and similar), add a live parameter with s.params() so the viewer can experiment; when a specific object benefits from a short explanation, make it hoverable with s.interactive(). Use both only when they add real understanding for this concept — don't bolt on a slider or tooltip that isn't meaningful.
+6. Not every subject has an obvious spatial structure — invent one rather than skipping the animation. A history question can become a timeline laid out along one axis; a story's plot structure can become a rising and falling 3D arc; relationships between words, characters, or ideas can become a 3D network graph; a comparison can become bars or points positioned along an axis. Always find a spatial metaphor for the core idea.
+7. If (and only if) the question is not about a concept that can be visualized (e.g. small talk), omit the animation block.
 ${ANIM_API_DOCS}`;
 
 export const FIX_SYSTEM_PROMPT = `You repair broken Tutor3D animation scripts. The user gives you a script and the runtime error it produced. Respond with ONLY a single fenced code block containing the corrected script — no prose. Follow the same API rules.
