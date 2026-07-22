@@ -1,7 +1,7 @@
 // Tutor3D — Three.js runtime for AI-generated tutor animations.
 // Plain script; requires globalThis.THREE (vendored bundle) and TutorAnim core.
 (() => {
-  const { easings, applyTweens, timelineDuration } = globalThis.TutorAnim;
+  const { easings, applyTweens, timelineDuration, isClick } = globalThis.TutorAnim;
   const activeScenes = [];
 
   function createScene3D({ span = 6, width = 640, height = 400 } = {}) {
@@ -34,6 +34,7 @@
     let playing = true;
     let alive = true;
     let lastNow = null;
+    let interactiveState = null;
 
     function render() {
       applyTweens(tweens, time);
@@ -257,6 +258,88 @@
           paramsBar.appendChild(row);
         }
         return values;
+      },
+      interactive(mesh, { label = "" } = {}) {
+        if (!interactiveState) {
+          interactiveState = {
+            objects: [],
+            raycaster: new THREE.Raycaster(),
+            pointer: new THREE.Vector2(),
+            hovered: null,
+            pinned: null,
+            downXY: null,
+          };
+          wrap.style.position = "relative";
+          const tooltip = document.createElement("div");
+          tooltip.style.cssText = "position:absolute;display:none;pointer-events:none;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:4px 8px;font:12px system-ui;max-width:200px;z-index:10";
+          wrap.appendChild(tooltip);
+
+          const setHighlight = (obj, on) => {
+            if (!obj || !obj.material || !obj.material.emissive) return;
+            if (on) {
+              obj.userData._origEmissive = obj.material.emissive.getHex();
+              obj.material.emissive.setHex(0x334155);
+            } else if (obj.userData._origEmissive != null) {
+              obj.material.emissive.setHex(obj.userData._origEmissive);
+            }
+          };
+          const showTooltip = (obj, clientX, clientY) => {
+            const rect = renderer.domElement.getBoundingClientRect();
+            tooltip.textContent = obj.userData.tutorLabel || "";
+            tooltip.style.left = `${clientX - rect.left + 12}px`;
+            tooltip.style.top = `${clientY - rect.top + 12}px`;
+            tooltip.style.display = "block";
+          };
+          const hideTooltip = () => { tooltip.style.display = "none"; };
+          const pickObject = (clientX, clientY) => {
+            const rect = renderer.domElement.getBoundingClientRect();
+            interactiveState.pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            interactiveState.pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            interactiveState.raycaster.setFromCamera(interactiveState.pointer, camera);
+            const hits = interactiveState.raycaster.intersectObjects(interactiveState.objects, false);
+            return hits.length ? hits[0].object : null;
+          };
+
+          renderer.domElement.addEventListener("pointermove", (e) => {
+            const obj = pickObject(e.clientX, e.clientY);
+            if (obj !== interactiveState.hovered) {
+              setHighlight(interactiveState.hovered, false);
+              interactiveState.hovered = obj;
+              setHighlight(obj, true);
+            }
+            if (interactiveState.pinned) {
+              showTooltip(interactiveState.pinned, e.clientX, e.clientY);
+            } else if (obj) {
+              showTooltip(obj, e.clientX, e.clientY);
+            } else {
+              hideTooltip();
+            }
+          });
+          renderer.domElement.addEventListener("pointerdown", (e) => {
+            interactiveState.downXY = { x: e.clientX, y: e.clientY };
+          });
+          renderer.domElement.addEventListener("pointerup", (e) => {
+            const upXY = { x: e.clientX, y: e.clientY };
+            const wasClick = interactiveState.downXY && isClick(interactiveState.downXY, upXY);
+            if (wasClick) {
+              const obj = pickObject(e.clientX, e.clientY);
+              if (obj && interactiveState.pinned === obj) {
+                interactiveState.pinned = null;
+                hideTooltip();
+              } else if (obj) {
+                interactiveState.pinned = obj;
+                showTooltip(obj, e.clientX, e.clientY);
+              } else if (interactiveState.pinned) {
+                interactiveState.pinned = null;
+                hideTooltip();
+              }
+            }
+            interactiveState.downXY = null;
+          });
+        }
+        mesh.userData.tutorLabel = label;
+        interactiveState.objects.push(mesh);
+        return mesh;
       },
     };
 
