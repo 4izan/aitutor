@@ -35,7 +35,7 @@ Open http://localhost:5173 and ask something like "Why does a pendulum swing?".
 - Each response may contain a fenced ```animation block; it is stripped from the
   visible text and executed in a sandboxed iframe with Three.js + Tutor3D
   preloaded.
-- `npm run check` — acceptance script: sends five canonical prompts to
+- `npm run check` — acceptance script: sends a set of canonical prompts to
   `/api/chat` and validates each generated animation (present, valid syntax,
   no forbidden APIs). Run this after any prompt or engine change.
 
