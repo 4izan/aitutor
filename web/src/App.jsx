@@ -54,6 +54,9 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className={`ambient${busy ? " ambient-active" : ""}`} aria-hidden="true">
+        <div className="ambient-mesh"></div>
+      </div>
       <header className="topbar">AI Tutor <span className="sub">math &amp; physics, animated</span></header>
       <main className="chat" ref={listRef}>
         {messages.length === 0 && (
