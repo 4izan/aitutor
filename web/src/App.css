@@ -120,14 +120,45 @@ body {
   border-radius: 10px;
   padding: 12px 14px;
   font: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.composer textarea:focus {
+  outline: none;
+  border-color: var(--accent-1);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
 }
 .composer button {
-  background: #1d4ed8;
+  position: relative;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
   color: white;
   border: none;
   border-radius: 10px;
   padding: 0 22px;
   font: inherit;
   cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+.composer button:hover:not(:disabled) {
+  box-shadow: 0 0 16px 2px rgba(219, 39, 119, 0.5);
+}
+.composer button:active:not(:disabled) {
+  transform: scale(0.94);
 }
 .composer button:disabled { opacity: 0.5; cursor: default; }
+.composer button:not(:disabled)::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 13px;
+  border: 1px solid var(--accent-2);
+  opacity: 0;
+  animation: btn-ping 2.2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes btn-ping {
+  0% { opacity: 0.6; transform: scale(0.92); }
+  100% { opacity: 0; transform: scale(1.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer button::after { animation: none; opacity: 0; }
+}
