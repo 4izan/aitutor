@@ -72,7 +72,7 @@ export default function App() {
       <main className="chat" ref={listRef}>
         {messages.length === 0 && (
           <div className="empty">
-            Ask me anything — try <em>"{exampleQuestion}"</em>
+            Ask me anything — try <em>“{exampleQuestion}”</em>
           </div>
         )}
         {messages.map((m, i) =>
