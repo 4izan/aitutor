@@ -1,10 +1,21 @@
 import { useRef, useState } from "react";
 import AssistantMessage from "./components/AssistantMessage.jsx";
 
+const EXAMPLE_QUESTIONS = [
+  "Why does a pendulum swing?",
+  "What caused the fall of the Berlin Wall?",
+  "How does supply and demand set prices?",
+  "What makes a sonnet different from free verse?",
+  "How do plants convert sunlight into energy?",
+];
+
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [exampleQuestion] = useState(
+    () => EXAMPLE_QUESTIONS[Math.floor(Math.random() * EXAMPLE_QUESTIONS.length)]
+  );
   const listRef = useRef(null);
 
   async function send() {
@@ -57,11 +68,11 @@ export default function App() {
       <div className={`ambient${busy ? " ambient-active" : ""}`} aria-hidden="true">
         <div className="ambient-mesh"></div>
       </div>
-      <header className="topbar">AI Tutor <span className="sub">math &amp; physics, animated</span></header>
+      <header className="topbar">AI Tutor <span className="sub">every subject, animated</span></header>
       <main className="chat" ref={listRef}>
         {messages.length === 0 && (
           <div className="empty">
-            Ask me anything — try <em>“Why does a pendulum swing?”</em>
+            Ask me anything — try <em>"{exampleQuestion}"</em>
           </div>
         )}
         {messages.map((m, i) =>
@@ -86,7 +97,7 @@ export default function App() {
               send();
             }
           }}
-          placeholder="Ask a math or physics question…"
+          placeholder="Ask about any subject…"
           rows={1}
         />
         <button onClick={send} disabled={busy || !input.trim()}>
