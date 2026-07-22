@@ -30,7 +30,7 @@
   to { transform: rotate(360deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ambient-mesh { animation: none; transition: none; opacity: 0.14; }
+  .ambient-mesh, .ambient-active .ambient-mesh { animation: none; transition: none; opacity: 0.14; }
 }
 
 body {
