@@ -59,16 +59,13 @@ the same file path updates the same URL.
 
 ## Deploy to Render
 
-1. Push this repo to GitLab (Render also supports GitHub and Bitbucket the
-   same way, if you'd rather use one of those).
-2. In the [Render dashboard](https://dashboard.render.com), connect your
-   GitLab account under Account Settings → Git Providers, if you haven't
-   already.
-3. Choose "New > Blueprint" and point it at the repo — it reads
-   `render.yaml` automatically.
-4. When prompted, paste your `GROQ_API_KEY` as the environment variable
+1. Push this repo to GitHub.
+2. In the [Render dashboard](https://dashboard.render.com), choose
+   "New > Blueprint" and point it at the repo — it reads `render.yaml`
+   automatically.
+3. When prompted, paste your `GROQ_API_KEY` as the environment variable
    value (it's marked `sync: false` in the blueprint, so Render always asks
    rather than expecting it in git).
-5. Deploy. The free tier spins down after 15 minutes of inactivity — the
+4. Deploy. The free tier spins down after 15 minutes of inactivity — the
    first request after a quiet period takes about a minute to wake the
    server back up; after that it behaves normally.
