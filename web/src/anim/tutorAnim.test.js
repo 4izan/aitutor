@@ -74,3 +74,23 @@ describe("tweens", () => {
     expect(A.timelineDuration([])).toBe(0);
   });
 });
+
+describe("isClick", () => {
+  it("treats a stationary pointer as a click", () => {
+    expect(A.isClick({ x: 100, y: 100 }, { x: 100, y: 100 })).toBe(true);
+  });
+  it("treats a tiny wobble under the default threshold as a click", () => {
+    expect(A.isClick({ x: 100, y: 100 }, { x: 102, y: 101 })).toBe(true);
+  });
+  it("treats a point exactly at the default 5px threshold as a click", () => {
+    expect(A.isClick({ x: 0, y: 0 }, { x: 5, y: 0 })).toBe(true);
+  });
+  it("treats movement past the default threshold as a drag, not a click", () => {
+    expect(A.isClick({ x: 0, y: 0 }, { x: 6, y: 0 })).toBe(false);
+    expect(A.isClick({ x: 0, y: 0 }, { x: 50, y: 50 })).toBe(false);
+  });
+  it("respects a custom threshold", () => {
+    expect(A.isClick({ x: 0, y: 0 }, { x: 20, y: 0 }, 25)).toBe(true);
+    expect(A.isClick({ x: 0, y: 0 }, { x: 20, y: 0 }, 10)).toBe(false);
+  });
+});

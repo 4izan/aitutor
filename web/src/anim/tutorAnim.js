@@ -39,5 +39,11 @@
     return tweens.reduce((m, tw) => Math.max(m, tw.delay + tw.duration), 0);
   }
 
-  globalThis.TutorAnim = { easings, lerp, makeTransform, applyTweens, timelineDuration };
+  function isClick(downXY, upXY, thresholdPx = 5) {
+    const dx = upXY.x - downXY.x;
+    const dy = upXY.y - downXY.y;
+    return Math.sqrt(dx * dx + dy * dy) <= thresholdPx;
+  }
+
+  globalThis.TutorAnim = { easings, lerp, makeTransform, applyTweens, timelineDuration, isClick };
 })();
