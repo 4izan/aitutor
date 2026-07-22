@@ -7,6 +7,9 @@ const PROMPTS = [
   "How does bubble sort work?",
   "Show me projectile motion",
   "What is a derivative?",
+  "What caused the fall of the Berlin Wall?",
+  "How does supply and demand set prices?",
+  "What makes a sonnet different from free verse?",
 ];
 
 const FORBIDDEN = /\b(document\.|window\.|fetch\s*\(|setTimeout|setInterval|requestAnimationFrame|import\s|export\s|eval\s*\(|XMLHttpRequest)/;

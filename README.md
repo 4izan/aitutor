@@ -1,6 +1,6 @@
 # AI Tutor
 
-A local ChatGPT-style tutor for math and physics that generates a live,
+A local ChatGPT-style tutor for any academic subject that generates a live,
 interactive 3D animation beneath each explanation.
 
 ## Requirements
