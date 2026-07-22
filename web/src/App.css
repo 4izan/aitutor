@@ -64,7 +64,7 @@ body {
   border-radius: 12px;
   padding: 10px 16px;
   line-height: 1.55;
-  animation: msg-rise 0.45s ease both;
+  animation: msg-rise 0.45s ease backwards;
   transition: transform 0.15s ease;
 }
 .msg:hover { transform: translateY(-1px); }
