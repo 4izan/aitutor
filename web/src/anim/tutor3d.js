@@ -222,6 +222,42 @@
         tweens.push({ target, props, duration, delay, easing: easings[easing] || easings.easeInOut });
         return api;
       },
+      params(schema = {}) {
+        const values = {};
+        let paramsBar = wrap.querySelector(".tutor3d-params");
+        if (!paramsBar) {
+          paramsBar = document.createElement("div");
+          paramsBar.className = "tutor3d-params";
+          paramsBar.style.cssText = "display:flex;flex-direction:column;gap:4px;margin-top:6px";
+          wrap.appendChild(paramsBar);
+        }
+        for (const key in schema) {
+          const { label = key, min = 0, max = 1, step = 0.1, default: def = min } = schema[key];
+          values[key] = def;
+          const row = document.createElement("div");
+          row.style.cssText = "display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8";
+          const text = document.createElement("span");
+          text.textContent = label;
+          text.style.cssText = "min-width:120px";
+          const input = document.createElement("input");
+          input.type = "range";
+          input.min = min;
+          input.max = max;
+          input.step = step;
+          input.value = def;
+          input.style.cssText = "flex:1";
+          const valueLabel = document.createElement("span");
+          valueLabel.textContent = def;
+          valueLabel.style.cssText = "min-width:40px;text-align:right;color:#e2e8f0";
+          input.oninput = () => {
+            values[key] = Number(input.value);
+            valueLabel.textContent = input.value;
+          };
+          row.append(text, input, valueLabel);
+          paramsBar.appendChild(row);
+        }
+        return values;
+      },
     };
 
     activeScenes.push({
