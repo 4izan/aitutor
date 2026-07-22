@@ -3,3 +3,4 @@ dist/
 .env
 .claude/settings.local.json
 artifact/tutor-demo.html
+.superpowers/
