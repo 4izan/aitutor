@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import AssistantMessage from "./components/AssistantMessage.jsx";
+import PinnedViewport from "./components/PinnedViewport.jsx";
+import { parseResponse } from "./lib/parseResponse.js";
 
 const EXAMPLE_QUESTIONS = [
   "Why does a pendulum swing?",
@@ -63,47 +65,62 @@ export default function App() {
     }
   }
 
+  const lastMessage = messages[messages.length - 1];
+  const lastParsed =
+    lastMessage?.role === "assistant"
+      ? parseResponse(lastMessage.content)
+      : { animationCode: null, pending: false };
+  const viewportCode = !busy && lastParsed.animationCode ? lastParsed.animationCode : null;
+  const viewportPending = lastParsed.pending;
+
   return (
     <div className="app">
       <div className={`ambient${busy ? " ambient-active" : ""}`} aria-hidden="true">
         <div className="ambient-mesh"></div>
       </div>
       <header className="topbar">AI Tutor <span className="sub">every subject, animated</span></header>
-      <main className="chat" ref={listRef}>
-        {messages.length === 0 && (
-          <div className="empty">
-            Ask me anything — try <em>“{exampleQuestion}”</em>
-          </div>
-        )}
-        {messages.map((m, i) =>
-          m.role === "user" ? (
-            <div key={i} className="msg user">{m.content}</div>
-          ) : (
-            <AssistantMessage
-              key={i}
-              content={m.content}
-              streaming={busy && i === messages.length - 1}
+      <div className="layout">
+        <div className="chat-col">
+          <main className="chat" ref={listRef}>
+            {messages.length === 0 && (
+              <div className="empty">
+                Ask me anything — try <em>“{exampleQuestion}”</em>
+              </div>
+            )}
+            {messages.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="msg user">{m.content}</div>
+              ) : (
+                <AssistantMessage
+                  key={i}
+                  content={m.content}
+                  streaming={busy && i === messages.length - 1}
+                />
+              )
+            )}
+          </main>
+          <footer className="composer">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder="Ask about any subject…"
+              rows={1}
             />
-          )
-        )}
-      </main>
-      <footer className="composer">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          placeholder="Ask about any subject…"
-          rows={1}
-        />
-        <button onClick={send} disabled={busy || !input.trim()}>
-          {busy ? "…" : "Send"}
-        </button>
-      </footer>
+            <button onClick={send} disabled={busy || !input.trim()}>
+              {busy ? "…" : "Send"}
+            </button>
+          </footer>
+        </div>
+        <div className="viewport-col">
+          <PinnedViewport animationCode={viewportCode} pending={viewportPending} />
+        </div>
+      </div>
     </div>
   );
 }
