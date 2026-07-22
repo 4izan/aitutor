@@ -1,4 +1,4 @@
-// Acceptance checker: hits /api/chat with the five canonical prompts and
+// Acceptance checker: hits /api/chat with a set of canonical prompts and
 // validates each generated animation block (present, valid syntax, no
 // forbidden APIs). Requires the dev server (npm run dev).
 const PROMPTS = [
