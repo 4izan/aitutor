@@ -13,7 +13,7 @@ export default function AssistantMessage({ content, streaming }) {
       {pending && <div className="anim-note">Building animation…</div>}
       {animationCode && !streaming && <AnimationFrame code={animationCode} />}
       {streaming && !visibleText && !pending && (
-        <div className="think" aria-label="Thinking">
+        <div className="think" role="status" aria-label="Thinking">
           <span></span>
           <span></span>
           <span></span>
