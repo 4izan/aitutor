@@ -61,11 +61,6 @@ app.post(
   }
 );
 
-function extractCodeBlock(text) {
-  const m = text.match(/```(?:animation|javascript|js)?\s*\n([\s\S]*?)```/);
-  return m ? m[1].trim() : null;
-}
-
 app.post(
   "/api/fix",
   rateLimitMiddleware(fixLimiter, (res) => {
@@ -80,7 +75,7 @@ app.post(
     let failure = null;
     for await (const event of streamCompletion({
       systemPrompt: FIX_SYSTEM_PROMPT,
-      input: `This animation script failed.\n\nScript:\n\`\`\`\n${code}\n\`\`\`\n\nRuntime error:\n${error}\n\nReturn the corrected script.`,
+      input: `This animation fragment failed.\n\nFragment:\n${code}\n\nError:\n${error}\n\nReturn the corrected fragment.`,
     })) {
       if (event.type === "delta") text += event.text;
       else if (event.type === "error") failure = event.message;
@@ -89,7 +84,7 @@ app.post(
       console.error(failure);
       return res.status(500).json({ code: null, error: failure });
     }
-    res.json({ code: extractCodeBlock(text) });
+    res.json({ code: text.trim() || null });
   }
 );
 
