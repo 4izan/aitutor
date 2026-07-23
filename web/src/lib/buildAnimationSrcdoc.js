@@ -1,7 +1,3 @@
-function neutralize(code) {
-  return code.replaceAll("</script", "<\\/script");
-}
-
 export function buildAnimationSrcdoc(userFragment) {
   return `<!doctype html>
 <html>
@@ -28,7 +24,7 @@ window.addEventListener("unhandledrejection", function (e) {
   parent.postMessage({ type: "anim-error", message: String((e.reason && e.reason.message) || e.reason || "unhandled promise rejection") }, "*");
 });
 </${"script"}>
-${neutralize(userFragment)}
+${userFragment}
 </body>
 </html>`;
 }

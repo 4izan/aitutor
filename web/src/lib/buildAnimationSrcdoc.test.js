@@ -7,14 +7,12 @@ describe("buildAnimationSrcdoc", () => {
     expect(html).toContain("Content-Security-Policy");
     expect(html).toContain("default-src 'none'");
     expect(html).toContain('<div id="thing"></div>');
-    expect(html).toContain('console.log("hi");');
     expect(html).toContain("anim-error");
     expect(html).toContain("sketchpadReducedMotion");
   });
 
-  it("neutralizes </script> inside the user fragment", () => {
-    const html = buildAnimationSrcdoc('<script>const s = "</script>";</script>');
-    expect(html).not.toContain('const s = "</script>";');
-    expect(html).toContain('const s = "<\\/script>";');
+  it("embeds the user fragment's own script tags verbatim, without mangling their close tags", () => {
+    const html = buildAnimationSrcdoc('<script>console.log("hi");</script>');
+    expect(html).toContain('<script>console.log("hi");</script>');
   });
 });
