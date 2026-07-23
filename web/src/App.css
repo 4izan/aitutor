@@ -92,6 +92,32 @@ body {
   color: #94a3b8;
 }
 .pinned-viewport.ready { display: block; text-align: left; padding: 12px; }
+.pinned-viewport-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pinned-viewport-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.pinned-viewport-controls {
+  display: flex;
+  gap: 6px;
+}
+.pinned-viewport-controls button {
+  font-size: 12px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pinned-viewport-controls button:hover { border-color: var(--accent-1); color: var(--accent-1); }
 @media (max-width: 900px) {
   .layout { flex-direction: column; }
   .viewport-col { width: 100%; flex-shrink: 0; padding: 20px 20px 0; order: -1; }
