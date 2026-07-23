@@ -1,6 +1,6 @@
 // Acceptance checker: hits /api/chat with a set of canonical prompts and
-// validates each generated animation block (present, valid syntax, no
-// forbidden APIs). Requires the dev server (npm run dev).
+// validates each generated hologram animation fragment (present, valid
+// syntax, no forbidden APIs). Requires the dev server (npm run dev).
 const PROMPTS = [
   "Explain what a sine wave is",
   "Why does a pendulum swing?",
@@ -12,11 +12,29 @@ const PROMPTS = [
   "What makes a sonnet different from free verse?",
 ];
 
-const FORBIDDEN = /\b(document\.|window\.|fetch\s*\(|setTimeout|setInterval|requestAnimationFrame|import\s|export\s|eval\s*\(|XMLHttpRequest)/;
+const FORBIDDEN = /\b(fetch\s*\(|XMLHttpRequest|eval\s*\(|import\s|export\s)/;
 
 function extractAnimation(text) {
-  const m = text.match(/```animation\s*\n([\s\S]*?)```/);
-  return m ? m[1].trim() : null;
+  const start = text.indexOf("<<<ANIMATION>>>");
+  const end = text.indexOf("<<<END>>>");
+  if (start === -1 || end === -1) return null;
+  const html = text.slice(start + "<<<ANIMATION>>>".length, end).trim();
+  return html || null;
+}
+
+function findScriptSyntaxError(animationHtml) {
+  const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+  let match;
+  while ((match = scriptRegex.exec(animationHtml)) !== null) {
+    const code = match[1];
+    if (!code || !code.trim()) continue;
+    try {
+      new Function(code);
+    } catch (e) {
+      return e.message;
+    }
+  }
+  return null;
 }
 
 async function ask(prompt) {
@@ -41,12 +59,13 @@ for (const prompt of PROMPTS) {
   process.stdout.write(`\n=== ${prompt}\n`);
   try {
     const full = await ask(prompt);
-    const code = extractAnimation(full);
-    if (!code) { console.log("FAIL: no animation block"); failures++; continue; }
-    const forbidden = code.match(FORBIDDEN);
+    const html = extractAnimation(full);
+    if (!html) { console.log("FAIL: no animation fragment"); failures++; continue; }
+    const forbidden = html.match(FORBIDDEN);
     if (forbidden) { console.log(`FAIL: forbidden API: ${forbidden[0]}`); failures++; continue; }
-    try { new Function(code); } catch (e) { console.log(`FAIL: syntax error: ${e.message}`); failures++; continue; }
-    console.log(`PASS: ${code.split("\n").length} lines, createScene3D=${/createScene3D\s*\(/.test(code)}, tween=${/\.tween\s*\(/.test(code)}`);
+    const syntaxErr = findScriptSyntaxError(html);
+    if (syntaxErr) { console.log(`FAIL: syntax error: ${syntaxErr}`); failures++; continue; }
+    console.log(`PASS: ${html.split("\n").length} lines, preserve-3d=${/preserve-3d/.test(html)}, setPointerCapture=${/setPointerCapture/.test(html)}`);
   } catch (e) {
     console.log(`FAIL: request error: ${e.message}`);
     failures++;

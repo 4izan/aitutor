@@ -8,10 +8,7 @@
     "dev:server": "node --watch --env-file=.env server/index.js",
     "dev:web": "vite",
     "test": "vitest run",
-    "build:three": "node scripts/build-three.mjs",
     "check": "node scripts/check-prompts.mjs",
-    "build:lessons": "node scripts/generate-lessons.mjs",
-    "build:artifact": "node scripts/build-artifact.mjs",
     "build": "vite build",
     "start": "node server/index.js"
   },
@@ -20,8 +17,7 @@
     "groq-sdk": "^1.3.0",
     "marked": "^18.0.6",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "three": "^0.185.1"
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.3",
