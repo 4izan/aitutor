@@ -1,23 +1,32 @@
-const OPEN = "```animation";
+const CONCEPT_OPEN = "<<<CONCEPT>>>";
+const EXPLANATION_OPEN = "<<<EXPLANATION>>>";
+const ANIMATION_OPEN = "<<<ANIMATION>>>";
+const END = "<<<END>>>";
 
 export function parseResponse(text) {
-  const start = text.indexOf(OPEN);
-  if (start === -1) {
-    return { visibleText: text, animationCode: null, pending: false };
+  const conceptStart = text.indexOf(CONCEPT_OPEN);
+  if (conceptStart === -1) {
+    return { concept: "", visibleText: text, animationHtml: null, pending: false };
   }
-  const before = text.slice(0, start).trimEnd();
-  const afterOpen = text.indexOf("\n", start);
-  if (afterOpen === -1) {
-    // fence line itself still streaming
-    return { visibleText: before, animationCode: null, pending: true };
+
+  const explanationStart = text.indexOf(EXPLANATION_OPEN);
+  if (explanationStart === -1) {
+    return { concept: "", visibleText: "", animationHtml: null, pending: true };
   }
-  const rest = text.slice(afterOpen + 1);
-  const close = rest.indexOf("```");
-  if (close === -1) {
-    return { visibleText: before, animationCode: null, pending: true };
+  const concept = text.slice(conceptStart + CONCEPT_OPEN.length, explanationStart).trim();
+
+  const animationStart = text.indexOf(ANIMATION_OPEN);
+  if (animationStart === -1) {
+    const visibleText = text.slice(explanationStart + EXPLANATION_OPEN.length).trim();
+    return { concept, visibleText, animationHtml: null, pending: true };
   }
-  const animationCode = rest.slice(0, close).trim();
-  const after = rest.slice(close + 3).replace(/^[ \t]*\n?/, "");
-  const visibleText = after.trim() ? `${before}\n\n${after.trim()}` : before;
-  return { visibleText, animationCode, pending: false };
+  const visibleText = text.slice(explanationStart + EXPLANATION_OPEN.length, animationStart).trim();
+
+  const rest = text.slice(animationStart + ANIMATION_OPEN.length);
+  const endIdx = rest.indexOf(END);
+  if (endIdx === -1) {
+    return { concept, visibleText, animationHtml: null, pending: true };
+  }
+  const animationHtml = rest.slice(0, endIdx).trim();
+  return { concept, visibleText, animationHtml: animationHtml || null, pending: false };
 }
