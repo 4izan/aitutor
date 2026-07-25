@@ -7,5 +7,5 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
-      - key: GROQ_API_KEY
+      - key: ANTHROPIC_API_KEY
         sync: false

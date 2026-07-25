@@ -1,22 +1,21 @@
-import Groq from "groq-sdk";
+import Anthropic from "@anthropic-ai/sdk";
 
-const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
+const MAX_TOKENS = 4096;
 
 export async function* streamCompletion({ systemPrompt, input }) {
   try {
-    const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    const stream = await client.chat.completions.create({
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const stream = await client.messages.create({
       model: MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: input },
-      ],
+      max_tokens: MAX_TOKENS,
+      system: systemPrompt,
+      messages: [{ role: "user", content: input }],
       stream: true,
     });
-    for await (const chunk of stream) {
-      const text = chunk.choices[0]?.delta?.content;
-      if (text) {
-        yield { type: "delta", text };
+    for await (const event of stream) {
+      if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
+        yield { type: "delta", text: event.delta.text };
       }
     }
   } catch (err) {
