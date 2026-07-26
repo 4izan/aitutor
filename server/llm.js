@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
-const MAX_TOKENS = 8192;
+const MAX_TOKENS = 24000;
 
 export async function* streamCompletion({ systemPrompt, input }) {
   try {
