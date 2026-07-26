@@ -45,18 +45,28 @@ app.post(
     res.setHeader("Cache-Control", "no-cache");
     res.flushHeaders();
     const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+    // Claude's adaptive thinking can run silently for many seconds before
+    // the first visible delta arrives. Keep the connection alive across
+    // that gap (and any proxy/host idle-response timeout) with an SSE
+    // comment line, which EventSource and this client's `data: `-prefixed
+    // parsing both ignore.
+    const heartbeat = setInterval(() => res.write(": keepalive\n\n"), 15000);
     let hadError = false;
-    for await (const event of streamCompletion({
-      systemPrompt: TUTOR_SYSTEM_PROMPT,
-      input: buildTranscript(messages),
-    })) {
-      send(event);
-      if (event.type === "error") {
-        hadError = true;
-        console.error(event.message);
+    try {
+      for await (const event of streamCompletion({
+        systemPrompt: TUTOR_SYSTEM_PROMPT,
+        input: buildTranscript(messages),
+      })) {
+        send(event);
+        if (event.type === "error") {
+          hadError = true;
+          console.error(event.message);
+        }
       }
+      if (!hadError) send({ type: "done" });
+    } finally {
+      clearInterval(heartbeat);
     }
-    if (!hadError) send({ type: "done" });
     res.end();
   }
 );
