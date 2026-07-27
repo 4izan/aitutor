@@ -37,11 +37,12 @@ function findScriptSyntaxError(animationHtml) {
   return null;
 }
 
-async function ask(prompt) {
+async function askOnce(prompt) {
   const res = await fetch("http://localhost:3001/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+    signal: AbortSignal.timeout(180_000),
   });
   const raw = await res.text();
   let full = "";
@@ -52,6 +53,20 @@ async function ask(prompt) {
     if (data.type === "error") throw new Error(data.message);
   }
   return full;
+}
+
+async function ask(prompt) {
+  try {
+    return await askOnce(prompt);
+  } catch (e) {
+    // A dropped connection poisons undici's keep-alive pool, so an immediate
+    // retry reuses the same broken socket and fails identically -- which is
+    // how a single hiccup used to cascade into every remaining prompt
+    // failing. Pause so a fresh connection gets established before retrying.
+    console.log(`  (retrying in 5s after: ${e.message})`);
+    await new Promise((r) => setTimeout(r, 5000));
+    return await askOnce(prompt);
+  }
 }
 
 let failures = 0;

@@ -45,18 +45,55 @@ app.post(
     res.setHeader("Cache-Control", "no-cache");
     res.flushHeaders();
     const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+    // Claude's adaptive thinking can run silently for many seconds before
+    // the first visible delta arrives. Keep the connection alive across
+    // that gap (and any proxy/host idle-response timeout) with an SSE
+    // comment line, which EventSource and this client's `data: `-prefixed
+    // parsing both ignore.
+    const heartbeat = setInterval(() => res.write(": keepalive\n\n"), 15000);
+    // Stop writing as soon as the student closes the tab -- otherwise the
+    // interval keeps firing at a socket that no longer exists, from a timer
+    // callback outside Express's error handling.
+    req.on("close", () => clearInterval(heartbeat));
     let hadError = false;
-    for await (const event of streamCompletion({
-      systemPrompt: TUTOR_SYSTEM_PROMPT,
-      input: buildTranscript(messages),
-    })) {
-      send(event);
-      if (event.type === "error") {
-        hadError = true;
-        console.error(event.message);
+    let full = "";
+    // The client reads a missing <<<END>>> as "still streaming" and spins
+    // forever, so whenever the stream stops -- normally or early -- the text
+    // has to be left in a state the parser considers finished. Two ways it
+    // can be left open: the model ends its turn without the closing marker,
+    // or an error cuts it off partway (most likely inside the animation,
+    // since that code is the tail of the response).
+    const closeOpenSections = () => {
+      if (!full.includes("<<<ANIMATION>>>")) {
+        send({ type: "delta", text: "\n<<<ANIMATION>>>\n<<<END>>>" });
+        full += "\n<<<ANIMATION>>>\n<<<END>>>";
+      } else if (!full.includes("<<<END>>>")) {
+        send({ type: "delta", text: "\n<<<END>>>" });
+        full += "\n<<<END>>>";
       }
+    };
+    try {
+      for await (const event of streamCompletion({
+        systemPrompt: TUTOR_SYSTEM_PROMPT,
+        input: buildTranscript(messages),
+      })) {
+        // Close first, so an error message appended by the client lands
+        // after the marker instead of inside the animation fragment.
+        if (event.type === "error") closeOpenSections();
+        send(event);
+        if (event.type === "delta") full += event.text;
+        if (event.type === "error") {
+          hadError = true;
+          console.error(event.message);
+        }
+      }
+      if (!hadError) {
+        closeOpenSections();
+        send({ type: "done" });
+      }
+    } finally {
+      clearInterval(heartbeat);
     }
-    if (!hadError) send({ type: "done" });
     res.end();
   }
 );

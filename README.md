@@ -6,12 +6,12 @@ interactive 3D animation beneath each explanation.
 ## Requirements
 
 - Node 20.6+ (for `--env-file` support used in local dev)
-- A free Groq API key (no credit card required) — see Setup below
+- An Anthropic API key (paid — see https://console.anthropic.com for billing) — see Setup below
 
 ## Setup
 
-1. Get a free API key from [Groq Console](https://console.groq.com).
-2. Copy `.env.example` to `.env` and paste your key into `GROQ_API_KEY`.
+1. Get an API key from [Anthropic Console](https://console.anthropic.com).
+2. Copy `.env.example` to `.env` and paste your key into `ANTHROPIC_API_KEY`.
 3. `npm install`
 
 ## Run
@@ -22,9 +22,10 @@ Open http://localhost:5173 and ask something like "Why does a pendulum swing?".
 
 ## How it works
 
-- `server/` — Express server; `/api/chat` streams tutor responses via Groq
-  (`server/llm.js`); `/api/fix` repairs broken animation fragments (one retry,
-  covers both a pre-render syntax check and runtime errors).
+- `server/` — Express server; `/api/chat` streams tutor responses via the
+  Anthropic Claude API (`server/llm.js`); `/api/fix` repairs broken animation
+  fragments (one retry, covers both a pre-render syntax check and runtime
+  errors).
 - Each response follows a `<<<CONCEPT>>>`/`<<<EXPLANATION>>>`/`<<<ANIMATION>>>`/`<<<END>>>`
   format (`web/src/lib/parseResponse.js`). The `<<<ANIMATION>>>` section is a
   self-contained "hologram" HTML/CSS/JS fragment — a draggable, glowing CSS-3D
@@ -44,7 +45,7 @@ Open http://localhost:5173 and ask something like "Why does a pendulum swing?".
 2. In the [Render dashboard](https://dashboard.render.com), choose
    "New > Blueprint" and point it at the repo — it reads `render.yaml`
    automatically.
-3. When prompted, paste your `GROQ_API_KEY` as the environment variable
+3. When prompted, paste your `ANTHROPIC_API_KEY` as the environment variable
    value (it's marked `sync: false` in the blueprint, so Render always asks
    rather than expecting it in git).
 4. Deploy. The free tier spins down after 15 minutes of inactivity — the
