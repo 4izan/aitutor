@@ -28,9 +28,14 @@ Open http://localhost:5173 and ask something like "Why does a pendulum swing?".
   errors).
 - Each response follows a `<<<CONCEPT>>>`/`<<<EXPLANATION>>>`/`<<<ANIMATION>>>`/`<<<END>>>`
   format (`web/src/lib/parseResponse.js`). The `<<<ANIMATION>>>` section is a
-  self-contained "hologram" HTML/CSS/JS fragment — a draggable, glowing CSS-3D
-  shape — executed in a sandboxed iframe (`web/src/components/AnimationFrame.jsx`,
-  `web/src/lib/buildAnimationSrcdoc.js`).
+  self-contained Three.js scene — a glowing wireframe "hologram" you can orbit
+  by dragging — executed in a sandboxed iframe
+  (`web/src/components/AnimationFrame.jsx`, `web/src/lib/buildAnimationSrcdoc.js`).
+- That iframe has an opaque origin and a `default-src 'none'` CSP, so it cannot
+  fetch anything at all. Three.js is therefore inlined into each frame from the
+  vendored bundle at `web/src/vendor/three.iife.js`, and the generated scenes
+  cannot use textures, fonts, or any `three/examples` addon (no `OrbitControls`,
+  no `TextGeometry`) — camera orbit is hand-rolled and labels are HTML overlays.
 - `npm run check` — acceptance script: sends a set of canonical prompts to
   `/api/chat` and validates each generated animation fragment (present, valid
   syntax, no forbidden APIs). Run this after any prompt or rendering change.

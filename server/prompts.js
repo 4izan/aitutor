@@ -1,36 +1,49 @@
 const ANIMATION_RULES = `
-## VISUAL STYLE — hologram, CSS-3D ONLY (do not use <canvas> or <svg> for the 3D shape)
-Build the 3D shape entirely from CSS 3D transforms — a wrapper with perspective, an inner element with transform-style: preserve-3d, and 4-10 flat <div> "face" elements positioned in 3D space via translateZ/rotateX/rotateY/translateY etc. The browser's own 3D engine handles depth ordering and hiding back faces for you automatically — you do NOT need to compute depth sorting, perspective projection math, or which faces are hidden yourself. Just set backface-visibility: hidden on every face div and position them correctly in 3D space; the browser does the rest.
-Each face div: border: 1px solid the glow color, background: the glow color at 8-18% opacity (e.g. rgba(77,239,255,0.12)), box-shadow: 0 0 12px the glow color for a soft glow. This is static CSS, not something you compute per frame.
-Not every subject has an obvious physical shape — invent a spatial one rather than skipping the diagram. A history timeline can become faces laid out along one axis; a story's plot structure can become faces at rising and falling heights; relationships between words, characters, or ideas can become faces connected by thin glowing line divs; a comparison can become faces at different depths or sizes. Always find a 3D arrangement for the core idea.
-Palette: deep transparent/near-black page background, primary glow in cyan/electric-blue (#4DEFFF or #5BC8FF), optional magenta/violet accent (#C77DFF). No solid opaque warm colors. Text labels in the same cool white/cyan family.
+## RENDERER — Three.js WebGL, mounted into #stage
+Three.js is ALREADY LOADED as the global \`THREE\` before your code runs. Never import, require, or load it.
+There is NO network access in this frame: no textures, no images, no fonts, no loaders, and NO addons. Anything from three/examples — OrbitControls, EffectComposer, TextGeometry, GLTFLoader — does NOT exist. Only core THREE plus plain DOM APIs.
+An empty <div id="stage"> already exists and fills the frame. Create a THREE.WebGLRenderer and append renderer.domElement to it.
+
+## VISUAL STYLE — hologram
+Near-black scene background (0x06080B). Build the subject from glowing wireframe and line geometry: THREE.LineSegments, THREE.Line, THREE.WireframeGeometry, or MeshBasicMaterial with wireframe: true. Primary glow cyan/electric-blue (0x4DEFFF or 0x5BC8FF), optional violet accent (0xC77DFF). No warm opaque colors.
+Prefer UNLIT materials (MeshBasicMaterial, LineBasicMaterial). They need no lights and give the flat emissive hologram look. Only add lights if you deliberately use a lit material like MeshStandardMaterial — an AmbientLight next to MeshBasicMaterial does nothing and is dead code.
+Not every subject has an obvious physical shape — invent a spatial one rather than skipping the diagram. A history timeline can become nodes along an axis; a plot structure can become points at rising and falling heights; relationships between ideas can become nodes joined by glowing lines; a comparison can become shapes at different depths or sizes. Always find a 3D arrangement for the core idea.
+
+## LABELS — HTML overlays, never 3D text
+No fonts are available, so TextGeometry and every font loader are impossible. Put labels in absolutely-positioned HTML elements layered over the canvas inside #stage, in small cool white/cyan type. Keep them few and short.
 
 ## MOTION — the concept must move on its own, before anyone touches it
-If the concept itself involves motion, oscillation, flow, growth, or change over time (a pendulum swinging, a wave propagating, a planet orbiting, elements swapping in a sort, blood flowing, a reaction proceeding) — depict THAT motion continuously and automatically, playing immediately on load, independent of any user interaction. Use CSS @keyframes with animation-iteration-count: infinite on the moving part(s) — the host already caps any CSS animation's duration/iteration-count for users with reduced-motion preferences, so you do not need to handle that yourself. A diagram that only moves when the user drags the camera is not acceptable when the concept is itself dynamic — the camera drag is for LOOKING at the motion from different angles, not for causing it.
+If the concept itself involves motion, oscillation, flow, growth, or change over time (a pendulum swinging, a wave propagating, a planet orbiting, elements swapping in a sort, a reaction proceeding) — animate THAT in the render loop, playing immediately on load, independent of any user input. Drive it from elapsed time (THREE.Clock) so it runs at the same speed on every display. A scene that only moves when the user drags the camera is NOT acceptable when the concept is itself dynamic — dragging is for LOOKING at the motion from another angle, not for causing it.
+If window.sketchpadReducedMotion is true, render one representative still frame instead of the self-running motion — but dragging must still work.
 
-## INTERACTIVITY
-Drag anywhere on the shape to rotate it (update the preserve-3d wrapper's rotateX/rotateY based on pointer movement) — this orbits the camera around the scene, it does not drive the concept's own motion from MOTION above, which must already be playing. When the user releases, keep spinning briefly using the last drag speed, slowing down each frame (multiply velocity by 0.92-0.95 until it's near zero) — a simple requestAnimationFrame loop that only runs during this coast-down is fine.
-Add exactly one more control relevant to the concept (a button or slider) that changes something about the diagram when used (e.g. toggles a highlighted part, steps through stages, adjusts a value).
-Add small text labels (positioned absolutely or as its own face) directly on or near the diagram for key parts.
+## SIZING — the most common failure, read carefully
+#stage can measure 0x0 at the instant your script runs. NEVER capture width/height once into consts and trust them.
+Put sizing in a function you can call again:
+  function fit(){ var w = stage.clientWidth || 1, h = stage.clientHeight || 1; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+Call fit() once immediately, then keep it correct with: new ResizeObserver(fit).observe(stage);
+A window "resize" listener alone is NOT enough — this panel changes size without the window changing.
+Also set renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)).
 
-## SIZING
-Root element: width:100%;height:100%;box-sizing:border-box. No fixed pixel width/height anywhere.
-
-## CODE QUALITY — the most common real failures, follow exactly
-(1) POINTER EVENTS, not mouse events: on pointerdown, set isDragging=true and call element.setPointerCapture(e.pointerId) — this is required, do not skip it. On pointermove, only rotate if isDragging is true. On BOTH pointerup and pointercancel, set isDragging=false.
-(2) Exactly one state object for rotation, e.g. {x, y, vx, vy}. Update it directly; don't create new objects each event.
-(3) Do NOT wrap your code in a try/catch that shows your own error message — the host already catches and recovers from uncaught errors. Let errors propagate.
-(4) Never create or append new DOM/SVG elements inside a repeating loop (setInterval or a requestAnimationFrame loop) — create every element ONCE up front, then in the loop only change existing elements' style/transform properties. Creating new elements every frame will freeze the page.
-(5) Attach every event listener directly to a real element reference right after that element is created. Double-check every id/class you use in JS actually matches one you wrote in the HTML.
-
-## ACCESSIBILITY
-The host exposes window.sketchpadReducedMotion (boolean). If true, skip the release-coast-down spin (just stop rotating when the pointer is released) — but dragging itself must still work either way, since the user is causing that motion. Add one short aria-label on your root element describing what the diagram shows.
+## CAMERA CONTROL — hand-rolled, OrbitControls does not exist
+Drag to orbit the camera around the subject: keep spherical angles (theta/phi) plus a radius, recompute camera.position from them, then camera.lookAt(target). This moves the CAMERA only; it must never drive the concept's own motion.
+POINTER EVENTS, not mouse events: on pointerdown set isDragging = true and call renderer.domElement.setPointerCapture(e.pointerId) — required, do not skip. On pointermove, orbit only while isDragging. On BOTH pointerup and pointercancel, clear isDragging. Clamp phi so the camera cannot flip over the pole.
+Add exactly one more control relevant to the concept — an HTML <button> or <input type="range"> overlaid on the canvas — that changes something meaningful (toggles a highlighted part, steps through stages, adjusts a value).
 
 ## RESET VIEW
-Listen for window.addEventListener("message", function(e){ if(e.data && e.data.type === "sketchpad-reset-view"){ /* snap rotation back to your starting angle here */ } });
+window.addEventListener("message", function(e){ if(e.data && e.data.type === "sketchpad-reset-view"){ /* restore your starting camera angles here */ } });
+
+## CODE QUALITY — the most common real failures, follow exactly
+(1) Create every geometry, material, mesh and vector ONCE, before the render loop. Never allocate inside the loop — no \`new THREE.Vector3(...)\`, no new geometry or material per frame. If you need scratch math, reuse a vector created up front.
+(2) Exactly one requestAnimationFrame loop. Advance motion from clock.getDelta() or clock.getElapsedTime(), never a fixed per-frame constant.
+(3) Do NOT wrap your code in a try/catch that prints your own error message — the host already catches and recovers from uncaught errors. Let them propagate.
+(4) Wrap everything in an IIFE so you declare no globals.
+(5) Use only classes that exist in core THREE. Double-check anything you are unsure of rather than inventing an API.
+
+## ACCESSIBILITY
+Set one short aria-label on #stage describing what the diagram shows.
 
 ## BUDGET
-Aim for 40-90 lines in the ANIMATION section. A correct, smoothly-rotatable, well-lit, finished scene matters far more than raw complexity.
+Aim for 60-120 lines. A correct, readable, smoothly-running scene matters far more than raw complexity.
 `;
 
 export const TUTOR_SYSTEM_PROMPT = `You are a friendly, precise tutor for any academic subject.

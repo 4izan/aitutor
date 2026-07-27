@@ -80,7 +80,12 @@ for (const prompt of PROMPTS) {
     if (forbidden) { console.log(`FAIL: forbidden API: ${forbidden[0]}`); failures++; continue; }
     const syntaxErr = findScriptSyntaxError(html);
     if (syntaxErr) { console.log(`FAIL: syntax error: ${syntaxErr}`); failures++; continue; }
-    console.log(`PASS: ${html.split("\n").length} lines, preserve-3d=${/preserve-3d/.test(html)}, setPointerCapture=${/setPointerCapture/.test(html)}`);
+    if (!/WebGLRenderer/.test(html)) { console.log("FAIL: no THREE.WebGLRenderer -- not a Three.js scene"); failures++; continue; }
+    // Anything under three/examples is absent from the vendored core bundle, so
+    // referencing it throws at runtime rather than failing the syntax check.
+    const addon = html.match(/\b(OrbitControls|TextGeometry|FontLoader|GLTFLoader|EffectComposer|TrackballControls)\b/);
+    if (addon) { console.log(`FAIL: uses unavailable addon: ${addon[0]}`); failures++; continue; }
+    console.log(`PASS: ${html.split("\n").length} lines, ResizeObserver=${/ResizeObserver/.test(html)}, setPointerCapture=${/setPointerCapture/.test(html)}, clock=${/Clock/.test(html)}`);
   } catch (e) {
     console.log(`FAIL: request error: ${e.message}`);
     failures++;
