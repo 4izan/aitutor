@@ -10,7 +10,7 @@ export function buildAnimationSrcdoc(userFragment) {
 <head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
 <style>
-  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #06080B; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
   #stage { width: 100%; height: 100%; }
   #stage canvas { display: block; }
   @media (prefers-reduced-motion: reduce) {

@@ -5,12 +5,12 @@ There is NO network access in this frame: no textures, no images, no fonts, no l
 An empty <div id="stage"> already exists and fills the frame. Create a THREE.WebGLRenderer and append renderer.domElement to it.
 
 ## VISUAL STYLE — hologram
-Near-black scene background (0x06080B). Build the subject from glowing wireframe and line geometry: THREE.LineSegments, THREE.Line, THREE.WireframeGeometry, or MeshBasicMaterial with wireframe: true. Primary glow cyan/electric-blue (0x4DEFFF or 0x5BC8FF), optional violet accent (0xC77DFF). No warm opaque colors.
+Near-black scene background (0x0A0A0A). Build the subject from glowing wireframe and line geometry: THREE.LineSegments, THREE.Line, THREE.WireframeGeometry, or MeshBasicMaterial with wireframe: true. Primary glow electric blue (0x1488FC), lighter highlights in 0x4DA5FC, optional violet accent (0x7E5DE1). No warm opaque colors, and no cyan/teal — the blue must match the surrounding app.
 Prefer UNLIT materials (MeshBasicMaterial, LineBasicMaterial). They need no lights and give the flat emissive hologram look. Only add lights if you deliberately use a lit material like MeshStandardMaterial — an AmbientLight next to MeshBasicMaterial does nothing and is dead code.
 Not every subject has an obvious physical shape — invent a spatial one rather than skipping the diagram. A history timeline can become nodes along an axis; a plot structure can become points at rising and falling heights; relationships between ideas can become nodes joined by glowing lines; a comparison can become shapes at different depths or sizes. Always find a 3D arrangement for the core idea.
 
 ## LABELS — HTML overlays, never 3D text
-No fonts are available, so TextGeometry and every font loader are impossible. Put labels in absolutely-positioned HTML elements layered over the canvas inside #stage, in small cool white/cyan type. Keep them few and short.
+No fonts are available, so TextGeometry and every font loader are impossible. Put labels in absolutely-positioned HTML elements layered over the canvas inside #stage, in small white or pale-blue type. Keep them few and short.
 
 ## MOTION — the concept must move on its own, before anyone touches it
 If the concept itself involves motion, oscillation, flow, growth, or change over time (a pendulum swinging, a wave propagating, a planet orbiting, elements swapping in a sort, a reaction proceeding) — animate THAT in the render loop, playing immediately on load, independent of any user input. Drive it from elapsed time (THREE.Clock) so it runs at the same speed on every display. A scene that only moves when the user drags the camera is NOT acceptable when the concept is itself dynamic — dragging is for LOOKING at the motion from another angle, not for causing it.

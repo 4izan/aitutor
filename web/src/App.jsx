@@ -11,13 +11,43 @@ const EXAMPLE_QUESTIONS = [
   "How do plants convert sunlight into energy?",
 ];
 
+function Composer({ input, setInput, onSend, busy, hero, children }) {
+  return (
+    <div className={`composer${hero ? " composer-hero" : ""}`}>
+      <div className="composer-box">
+        <span className="composer-edge" aria-hidden="true"></span>
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onSend();
+            }
+          }}
+          placeholder="Ask about any subject…"
+          rows={hero ? 2 : 1}
+        />
+        <div className="composer-bar">
+          <div className="composer-meta">{children}</div>
+          <button
+            className="btn-primary"
+            onClick={onSend}
+            disabled={busy || !input.trim()}
+            aria-label="Send question"
+          >
+            {busy ? "…" : "Explain it"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [exampleQuestion] = useState(
-    () => EXAMPLE_QUESTIONS[Math.floor(Math.random() * EXAMPLE_QUESTIONS.length)]
-  );
   const listRef = useRef(null);
 
   async function streamChat(requestHistory, onDelta) {
@@ -52,8 +82,7 @@ export default function App() {
     }
   }
 
-  async function send() {
-    const text = input.trim();
+  async function sendText(text) {
     if (!text || busy) return;
     setInput("");
     setBusy(true);
@@ -68,6 +97,10 @@ export default function App() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function send() {
+    sendText(input.trim());
   }
 
   async function regenerate() {
@@ -103,59 +136,69 @@ export default function App() {
   const viewportPending = lastParsed.pending;
   const viewportConcept = lastParsed.concept;
 
+  const isHero = messages.length === 0;
+
   return (
-    <div className="app">
-      <div className={`ambient${busy ? " ambient-active" : ""}`} aria-hidden="true">
-        <div className="ambient-mesh"></div>
-      </div>
-      <header className="topbar">AI Tutor <span className="sub">every subject, animated</span></header>
-      <div className="layout">
-        <div className="chat-col">
-          <main className="chat" ref={listRef}>
-            {messages.length === 0 && (
-              <div className="empty">
-                Ask me anything — try <em>“{exampleQuestion}”</em>
-              </div>
-            )}
-            {messages.map((m, i) =>
-              m.role === "user" ? (
-                <div key={i} className="msg user">{m.content}</div>
-              ) : (
-                <AssistantMessage
-                  key={i}
-                  content={m.content}
-                  streaming={busy && i === messages.length - 1}
-                />
-              )
-            )}
-          </main>
-          <footer className="composer">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              placeholder="Ask about any subject…"
-              rows={1}
-            />
-            <button onClick={send} disabled={busy || !input.trim()}>
-              {busy ? "…" : "Send"}
-            </button>
-          </footer>
-        </div>
-        <div className="viewport-col">
-          <PinnedViewport
-            animationHtml={viewportHtml}
-            pending={viewportPending}
-            concept={viewportConcept}
-            onRedraw={regenerate}
-          />
-        </div>
-      </div>
+    <div className={`app${isHero ? " is-hero" : ""}`}>
+      <div className={`rays${busy ? " rays-active" : ""}`} aria-hidden="true"></div>
+
+      {isHero ? (
+        <main className="hero">
+          <span className="hero-badge">
+            <span className="hero-badge-dot" aria-hidden="true"></span>
+            Every subject, animated in 3D
+          </span>
+          <h1 className="hero-title">
+            What do you want to <span className="hero-title-accent">understand</span>?
+          </h1>
+          <p className="hero-sub">
+            Ask about anything — physics, history, poetry — and watch it explained
+            with an interactive 3D scene you can spin.
+          </p>
+          <Composer input={input} setInput={setInput} onSend={send} busy={busy} hero />
+          <div className="chips">
+            <span className="chips-label">or try</span>
+            {EXAMPLE_QUESTIONS.slice(0, 3).map((q) => (
+              <button key={q} className="chip" onClick={() => sendText(q)} disabled={busy}>
+                {q}
+              </button>
+            ))}
+          </div>
+        </main>
+      ) : (
+        <>
+          <header className="topbar">
+            <span className="topbar-mark">AI Tutor</span>
+            <span className="sub">every subject, animated</span>
+          </header>
+          <div className="layout">
+            <div className="chat-col">
+              <main className="chat" ref={listRef}>
+                {messages.map((m, i) =>
+                  m.role === "user" ? (
+                    <div key={i} className="msg user">{m.content}</div>
+                  ) : (
+                    <AssistantMessage
+                      key={i}
+                      content={m.content}
+                      streaming={busy && i === messages.length - 1}
+                    />
+                  )
+                )}
+              </main>
+              <Composer input={input} setInput={setInput} onSend={send} busy={busy} />
+            </div>
+            <div className="viewport-col">
+              <PinnedViewport
+                animationHtml={viewportHtml}
+                pending={viewportPending}
+                concept={viewportConcept}
+                onRedraw={regenerate}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
