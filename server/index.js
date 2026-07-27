@@ -52,16 +52,25 @@ app.post(
     // parsing both ignore.
     const heartbeat = setInterval(() => res.write(": keepalive\n\n"), 15000);
     let hadError = false;
+    let full = "";
     try {
       for await (const event of streamCompletion({
         systemPrompt: TUTOR_SYSTEM_PROMPT,
         input: buildTranscript(messages),
       })) {
         send(event);
+        if (event.type === "delta") full += event.text;
         if (event.type === "error") {
           hadError = true;
           console.error(event.message);
         }
+      }
+      // The model occasionally ends its turn without emitting the closing
+      // <<<END>>> marker. The client reads a missing marker as "still
+      // streaming" and would show a spinner forever, so close the section
+      // here now that the stream is genuinely finished.
+      if (!hadError && full.includes("<<<ANIMATION>>>") && !full.includes("<<<END>>>")) {
+        send({ type: "delta", text: "\n<<<END>>>" });
       }
       if (!hadError) send({ type: "done" });
     } finally {
